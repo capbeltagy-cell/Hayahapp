@@ -26,10 +26,13 @@ import 'services/quran_library_bootstrap.dart';
 import 'services/quran_service.dart';
 import 'services/storage_service.dart';
 
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('ar', null);
+  await initializeDateFormatting('en', null);
 
   // Check if we are running in the background isolate
   final isBackground =

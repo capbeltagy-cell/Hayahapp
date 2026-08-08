@@ -13,6 +13,8 @@ import '../widgets/arabesque_painter.dart';
 import '../static/mysnakbar.dart';
 import 'profile_page.dart';
 import 'quran_audio_page.dart';
+import '../services/storage_service.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -488,9 +490,12 @@ class _HomePageState extends State<HomePage> {
                   Obx(() {
                     final day = prayerController.prayerDay.value;
                     final location = day?.locationLabel ?? 'loading_location'.tr;
+                    final storage = Get.find<StorageService>();
+                    final countryCode = storage.read<String?>('last_country_code', null);
                     final hijri = _getHijriDateString(
                       DateTime.now(),
                       controller.currentLanguage.value,
+                      countryCode,
                     );
                     return Text(
                       '$hijri • $location',
@@ -512,11 +517,18 @@ class _HomePageState extends State<HomePage> {
               IconButton(
                 icon: Icon(Icons.calendar_today, color: goldColor, size: 20.r),
                 onPressed: () {
+                  final storage = Get.find<StorageService>();
+                  final countryCode = storage.read<String?>('last_country_code', null);
                   final hijri = _getHijriDateString(
                     DateTime.now(),
                     controller.currentLanguage.value,
+                    countryCode,
                   );
-                  MySnackbar.showInfo(title: 'ramadan_date'.tr, message: hijri);
+                  final gregorian = DateFormat.yMMMMd(controller.currentLanguage.value).format(DateTime.now());
+                  MySnackbar.showInfo(
+                    title: 'ramadan_date'.tr,
+                    message: '$hijri\n$gregorian',
+                  );
                 },
               ),
               Padding(
@@ -610,160 +622,176 @@ class _HomePageState extends State<HomePage> {
         );
       }
 
-      return Container(
-        padding: EdgeInsets.all(2.r),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30.r),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-                    goldColor.withValues(alpha: 0.3),
-                    goldColor.withValues(alpha: 0.05),
-                    goldColor.withValues(alpha: 0.2),
-                  ]
-                : [
-                    theme.colorScheme.primary.withValues(alpha: 0.25),
-                    theme.colorScheme.primary.withValues(alpha: 0.05),
-                    theme.colorScheme.primary.withValues(alpha: 0.18),
-                  ],
-          ),
-        ),
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          Get.find<AppController>().navigateToPage(1);
+        },
         child: Container(
-          padding: EdgeInsets.all(20.r),
+          padding: EdgeInsets.all(2.r),
           decoration: BoxDecoration(
-            color: isDark
-                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.6)
-                : theme.colorScheme.primary.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(28.r),
+            borderRadius: BorderRadius.circular(30.r),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                      goldColor.withValues(alpha: 0.3),
+                      goldColor.withValues(alpha: 0.05),
+                      goldColor.withValues(alpha: 0.2),
+                    ]
+                  : [
+                      theme.colorScheme.primary.withValues(alpha: 0.25),
+                      theme.colorScheme.primary.withValues(alpha: 0.05),
+                      theme.colorScheme.primary.withValues(alpha: 0.18),
+                    ],
+            ),
           ),
-          child: Column(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.notifications_active,
-                              color: goldColor,
-                              size: 14.r,
-                            ),
-                            SizedBox(width: 6.w),
-                            Expanded(
-                              child: Text(
-                                'upcoming_prayer'.tr.toUpperCase(),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: goldColor,
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.bold,
+          child: Container(
+            padding: EdgeInsets.all(20.r),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.6)
+                  : theme.colorScheme.primary.withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(28.r),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.notifications_active,
+                                color: goldColor,
+                                size: 14.r,
+                              ),
+                              SizedBox(width: 6.w),
+                              Expanded(
+                                child: Text(
+                                  'upcoming_prayer'.tr.toUpperCase(),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: goldColor,
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
+                            ],
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            day.nextPrayerKey.tr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.displayLarge?.copyWith(
+                              fontSize: 32.sp,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onPrimary,
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 8.h),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            'in_time'.trParams({
+                              'time': controller.countdownText(),
+                            }),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.inversePrimary,
+                              fontStyle: FontStyle.italic,
+                              fontSize: 13.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
                         Text(
-                          day.nextPrayerKey.tr,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.displayLarge?.copyWith(
-                            fontSize: 32.sp,
+                          controller.formatTime(day.nextPrayerTime),
+                          style: TextStyle(
+                            fontSize: 36.sp,
                             fontWeight: FontWeight.bold,
                             color: theme.colorScheme.onPrimary,
                           ),
                         ),
                         SizedBox(height: 4.h),
-                        Text(
-                          'in_time'.trParams({
-                            'time': controller.countdownText(),
-                          }),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.inversePrimary,
-                            fontStyle: FontStyle.italic,
-                            fontSize: 13.sp,
+                        SizedBox(
+                          width: 110.w,
+                          child: Text(
+                            day.locationLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: isDark ? goldColor.withValues(alpha: 0.6) : goldColor,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        controller.formatTime(day.nextPrayerTime),
-                        style: TextStyle(
-                          fontSize: 36.sp,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onPrimary,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      SizedBox(
-                        width: 110.w,
-                        child: Text(
-                          day.locationLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.end,
-                          style: TextStyle(
-                            fontSize: 11.sp,
-                            color: isDark ? goldColor.withValues(alpha: 0.6) : goldColor,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(height: 20.h),
-              Container(
-                height: 4.h,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(2.r),
+                  ],
                 ),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: controller.nextPrayerProgress(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: goldColor,
-                      borderRadius: BorderRadius.circular(2.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: goldColor,
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ],
+                SizedBox(height: 20.h),
+                Container(
+                  height: 4.h,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onPrimary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: controller.nextPrayerProgress(),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: goldColor,
+                        borderRadius: BorderRadius.circular(2.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: goldColor,
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
     });
   }
 
-  String _getHijriDateString(DateTime date, String lang) {
-    int year = date.year;
-    int month = date.month;
-    int day = date.day;
+  String _getHijriDateString(DateTime date, String lang, String? countryCode) {
+    int offset = 0;
+    if (countryCode != null) {
+      final code = countryCode.toUpperCase();
+      if (code == 'SA' || code == 'AE' || code == 'QA' || code == 'KW' || code == 'OM' || code == 'BH') {
+        offset = 1;
+      } else if (code == 'MA' || code == 'DZ' || code == 'TN') {
+        offset = -1;
+      }
+    }
+    final adjustedDate = date.add(Duration(days: offset));
+    int year = adjustedDate.year;
+    int month = adjustedDate.month;
+    int day = adjustedDate.day;
 
     if (month < 3) {
       year -= 1;
@@ -781,7 +809,7 @@ class _HomePageState extends State<HomePage> {
     final hijriYear = (base / 354.367068).floor();
     final rem = base - (hijriYear * 354.367068).floor();
     var hijriMonth = (rem / 29.530588).floor() + 1;
-    var hijriDay = (rem - ((hijriMonth - 1) * 29.530588).floor()).floor() + 4;
+    var hijriDay = (rem - ((hijriMonth - 1) * 29.530588).floor()).floor() + 2;
 
     if (hijriDay > 30) {
       hijriDay -= 30;
