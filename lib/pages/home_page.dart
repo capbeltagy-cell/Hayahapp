@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:quran/quran.dart' as quran;
-import 'package:url_launcher/url_launcher.dart';
 
 import '../controllers/app_controller.dart';
 import '../controllers/prayer_controller.dart';
 import '../services/quran_service.dart';
 import '../services/audio_download_service.dart';
+import '../services/ad_service.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/respectful_banner_ad.dart';
 import '../widgets/arabesque_painter.dart';
 import '../static/mysnakbar.dart';
 import 'profile_page.dart';
@@ -106,6 +107,29 @@ class _HomePageState extends State<HomePage> {
                           onChanged: (_) => controller.toggleTheme(),
                         ),
                       ),
+                    ),
+
+                    ValueListenableBuilder<bool>(
+                      valueListenable:
+                          AdService.instance.privacyOptionsRequired,
+                      builder: (context, required, _) {
+                        if (!required) return const SizedBox.shrink();
+                        return Padding(
+                          padding: EdgeInsets.only(top: 12.h),
+                          child: _SettingsCard(
+                            icon: Icons.privacy_tip_outlined,
+                            title: Get.locale?.languageCode == 'ar'
+                                ? 'خيارات الخصوصية'
+                                : 'Privacy options',
+                            subtitle: Get.locale?.languageCode == 'ar'
+                                ? 'راجع اختيارات خصوصية الإعلانات'
+                                : 'Review your advertising privacy choices',
+                            goldColor: goldColor,
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: AdService.instance.showPrivacyOptions,
+                          ),
+                        );
+                      },
                     ),
 
                     SizedBox(height: 24.h),
@@ -361,86 +385,6 @@ class _HomePageState extends State<HomePage> {
 
                     SizedBox(height: 30.h),
 
-                    // Premium Developer credits section
-                    Padding(
-                      padding: EdgeInsets.only(top: 20.h, bottom: 40.h),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 40.w,
-                                height: 1.h,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      goldColor.withValues(alpha: 0.0),
-                                      goldColor.withValues(alpha: 0.35),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 10.w),
-                                child: Icon(
-                                  Icons.favorite,
-                                  size: 10.r,
-                                  color: goldColor.withValues(alpha: 0.65),
-                                ),
-                              ),
-                              Container(
-                                width: 40.w,
-                                height: 1.h,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      goldColor.withValues(alpha: 0.35),
-                                      goldColor.withValues(alpha: 0.0),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 14.h),
-                          Text(
-                            'developed_by'.tr,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: textColor.withValues(alpha: 0.55),
-                              fontSize: 11.sp,
-                              letterSpacing: 0.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 14.h),
-                          Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 12.w,
-                            runSpacing: 8.h,
-                            children: [
-                              _buildDeveloperChip(
-                                context: context,
-                                name: 'mahmoud_shebl'.tr,
-                                phoneNumber: '01228580853',
-                                goldColor: goldColor,
-                                accentColor: accentColor,
-                                isDark: isDark,
-                              ),
-                              _buildDeveloperChip(
-                                context: context,
-                                name: 'ramy_nagi'.tr,
-                                phoneNumber: '01286348550',
-                                goldColor: goldColor,
-                                accentColor: accentColor,
-                                isDark: isDark,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
                     SizedBox(height: 100.h),
                   ],
                 ),
@@ -449,7 +393,13 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
+      bottomNavigationBar: const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RespectfulBannerAd(),
+          AppBottomNav(currentIndex: 0),
+        ],
+      ),
     );
   }
 
@@ -838,98 +788,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _makePhoneCall(String phoneNumber) async {
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
-    try {
-      if (await canLaunchUrl(launchUri)) {
-        await launchUrl(launchUri);
-      } else {
-        MySnackbar.showError(title: 'error'.tr, message: 'Could not launch dialer');
-      }
-    } catch (e) {
-      MySnackbar.showError(
-        title: 'error'.tr,
-        message: 'Could not launch dialer: $e',
-      );
-    }
-  }
-
-  Widget _buildDeveloperChip({
-    required BuildContext context,
-    required String name,
-    required String phoneNumber,
-    required Color goldColor,
-    required Color accentColor,
-    required bool isDark,
-  }) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: () => _makePhoneCall(phoneNumber),
-      borderRadius: BorderRadius.circular(30.r),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [
-                    Colors.white.withValues(alpha: 0.03),
-                    Colors.white.withValues(alpha: 0.01),
-                  ]
-                : [
-                    theme.colorScheme.primary.withValues(alpha: 0.04),
-                    theme.colorScheme.primary.withValues(alpha: 0.01),
-                  ],
-          ),
-          borderRadius: BorderRadius.circular(30.r),
-          border: Border.all(
-            color: isDark
-                ? goldColor.withValues(alpha: 0.15)
-                : theme.colorScheme.primary.withValues(alpha: 0.08),
-            width: 1,
-          ),
-          boxShadow: isDark
-              ? []
-              : [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.02),
-                    blurRadius: 6.r,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(5.r),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: accentColor.withValues(alpha: 0.08),
-              ),
-              child: Icon(
-                Icons.phone_in_talk,
-                size: 11.r,
-                color: accentColor,
-              ),
-            ),
-            SizedBox(width: 8.w),
-            Text(
-              name,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: isDark ? Colors.white.withValues(alpha: 0.9) : theme.colorScheme.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 12.sp,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

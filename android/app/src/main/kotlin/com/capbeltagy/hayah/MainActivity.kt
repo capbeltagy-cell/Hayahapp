@@ -1,4 +1,4 @@
-package com.example.hayah
+package com.capbeltagy.hayah
 
 import com.ryanheise.audioservice.AudioServiceActivity
 

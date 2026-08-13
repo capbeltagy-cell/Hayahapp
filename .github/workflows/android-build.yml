@@ -1,0 +1,104 @@
+name: Build Hayah Android
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.0'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test
+
+      - name: Configure signing when secrets are available
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          configured=0
+          for value in ANDROID_KEYSTORE_BASE64 ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD ANDROID_STORE_PASSWORD; do
+            [ -n "${!value:-}" ] && configured=$((configured + 1))
+          done
+          if [ "$configured" -ne 0 ] && [ "$configured" -ne 4 ]; then
+            echo "::error::Configure all four Android signing secrets or none."
+            exit 1
+          fi
+          if [ "$configured" -eq 4 ]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/hayah-upload.jks"
+            {
+              printf 'storePassword=%s\n' "$ANDROID_STORE_PASSWORD"
+              printf 'keyPassword=%s\n' "$ANDROID_KEY_PASSWORD"
+              printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+              printf 'storeFile=%s\n' "$RUNNER_TEMP/hayah-upload.jks"
+            } > android/key.properties
+          else
+            echo "::notice::Building review artifacts with Flutter's debug signing key."
+          fi
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Build release AAB
+        run: flutter build appbundle --release
+
+      - name: Verify signatures
+        shell: bash
+        run: |
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
+          "$APKSIGNER" verify --verbose build/app/outputs/flutter-apk/app-release.apk
+          jarsigner -verify build/app/outputs/bundle/release/app-release.aab
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p build/artifacts
+          cp build/app/outputs/flutter-apk/app-release.apk build/artifacts/Hayah.apk
+          cp build/app/outputs/bundle/release/app-release.aab build/artifacts/Hayah.aab
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f android/key.properties "$RUNNER_TEMP/hayah-upload.jks"
+
+      - name: Upload Hayah APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hayah-APK
+          path: build/artifacts/Hayah.apk
+          if-no-files-found: error
+
+      - name: Upload Hayah AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hayah-AAB
+          path: build/artifacts/Hayah.aab
+          if-no-files-found: error

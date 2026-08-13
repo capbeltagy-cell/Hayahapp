@@ -17,6 +17,7 @@ import 'pages/salat_page.dart';
 import 'pages/sunnah_page.dart';
 import 'pages/fatawa_page.dart';
 import 'services/audio_download_service.dart';
+import 'services/ad_service.dart';
 import 'services/audio_service.dart';
 import 'services/memorization_speech_service.dart';
 import 'services/notification_service.dart';
@@ -91,6 +92,8 @@ Future<void> main() async {
   );
 
   Get.put(FatawaController(), permanent: true);
+
+  unawaited(AdService.instance.initialize());
 
   runApp(const MyApp());
 }

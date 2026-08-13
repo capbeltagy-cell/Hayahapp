@@ -35,6 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   get: ^4.6.6
+  google_mobile_ads: ^9.1.0
   flutter_screenutil: ^5.9.3
   hive_flutter: ^1.1.0
   geolocator: ^13.0.4
