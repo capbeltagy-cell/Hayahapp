@@ -1,4 +1,5 @@
-import java.util.Properties\nimport org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
@@ -17,9 +18,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
     }
 
     defaultConfig {
@@ -39,7 +41,8 @@ android {
         create("release") {
             val propertiesFile = rootProject.file("key.properties")
             if (propertiesFile.exists()) {
-                val properties = Properties()\n                propertiesFile.inputStream().use(properties::load)
+                val properties = Properties()
+                propertiesFile.inputStream().use(properties::load)
                 keyAlias = properties.getProperty("keyAlias")
                 keyPassword = properties.getProperty("keyPassword")
                 storeFile = file(properties.getProperty("storeFile"))
