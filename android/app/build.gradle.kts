@@ -1,4 +1,4 @@
-import java.util.Properties
+import java.util.Properties\nimport org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
