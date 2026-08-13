@@ -39,9 +39,7 @@ android {
         create("release") {
             val propertiesFile = rootProject.file("key.properties")
             if (propertiesFile.exists()) {
-                val properties = java.util.Properties().apply {
-                    propertiesFile.inputStream().use(::load)
-                }
+                val properties = Properties()\n                propertiesFile.inputStream().use(properties::load)
                 keyAlias = properties.getProperty("keyAlias")
                 keyPassword = properties.getProperty("keyPassword")
                 storeFile = file(properties.getProperty("storeFile"))
