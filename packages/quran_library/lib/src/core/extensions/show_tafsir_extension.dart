@@ -5,7 +5,7 @@ part of '/quran.dart';
 final GlobalKey<NavigatorState> tafsirNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'tafsirNavigatorKey');
 
-extension ShowTafsirExtension on void {
+extension ShowTafsirExtension on Object {
   /// دالة مساعدة للحصول على سياق صالح
   /// Helper function to get valid context
   BuildContext? _getValidContext(BuildContext originalContext) {
