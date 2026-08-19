@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 
 class AdConfig {
   const AdConfig._();
@@ -24,9 +24,7 @@ class AdConfig {
   static const String _testRewardedId =
       'ca-app-pub-3940256099942544/5224354917';
 
-  static String get bannerId => useProduction
-      ? _required(_productionBannerId, 'ADMOB_BANNER_ID')
-      : _testBannerId;
+  static String get bannerId => useProduction ? 'ca-app-pub-4693639798724853/4349216181' : _testBannerId;
   static String get interstitialId => useProduction
       ? _required(_productionInterstitialId, 'ADMOB_INTERSTITIAL_ID')
       : _testInterstitialId;
@@ -44,3 +42,4 @@ class AdConfig {
     return value;
   }
 }
+

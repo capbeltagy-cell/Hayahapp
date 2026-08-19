@@ -87,6 +87,7 @@ class AdService {
   }
 
   void _loadInterstitial() {
+    return; // Disabled: Hayah uses banner ads only
     if (!_initialized || _interstitial != null) return;
     InterstitialAd.load(
       adUnitId: AdConfig.interstitialId,
@@ -106,7 +107,8 @@ class AdService {
   void recordEligibleTransitionAndMaybeShow() {
     _eligibleTransitions++;
     final now = DateTime.now();
-    final intervalPassed = _lastInterstitialAt == null ||
+    final intervalPassed =
+        _lastInterstitialAt == null ||
         now.difference(_lastInterstitialAt!) >= _minimumInterstitialInterval;
     final ad = _interstitial;
     if (_eligibleTransitions < _minimumEligibleTransitions ||
@@ -132,6 +134,7 @@ class AdService {
   }
 
   void _loadRewarded() {
+    return; // Disabled: Hayah uses banner ads only
     if (!_initialized || _rewarded != null) return;
     RewardedAd.load(
       adUnitId: AdConfig.rewardedId,
@@ -147,6 +150,7 @@ class AdService {
   }
 
   bool showRewarded({required void Function(RewardItem reward) onReward}) {
+    return false; // Disabled: Hayah uses banner ads only
     final ad = _rewarded;
     if (ad == null) {
       _loadRewarded();
